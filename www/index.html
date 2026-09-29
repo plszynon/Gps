@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="stylesheet" href="lib/leaflet.css"><script src="lib/leaflet.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0d0f13;color:#f2f4f7;font-family:system-ui,sans-serif;padding:env(safe-area-inset-top) 12px 12px}
+.tabs{display:flex;background:#181b21;border-radius:12px;padding:4px;gap:4px;margin-top:12px}
+.tabs button{flex:1;border:0;background:none;color:#8b93a1;padding:12px;border-radius:9px;font-size:16px;font-weight:600}
+.tabs .on{background:#3b9cff;color:#fff}
+.v{margin-top:12px;background:#181b21;border-radius:16px;padding:12px}
+#map{height:300px;border-radius:12px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.s{background:#181b21;border-radius:12px;padding:12px}
+.s small{color:#8b93a1;display:block;font-size:12px}.s b{font-size:24px}.s span{font-size:13px;color:#8b93a1}
+.r{display:flex;gap:8px;margin-top:12px}
+.r button{flex:1;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:700;color:#fff;background:#22c55e}
+.r .rs{background:#2a2f38;flex:.5}.r .st{background:#ef4444}
+#msg{margin-top:10px;font-size:13px;color:#8b93a1;text-align:center}
+.h{display:none}
+</style></head><body>
+<div class="tabs"><button id="t1" class="on">Prędkościomierz</button><button id="t2">Mapa</button></div>
+<div class="v" id="v1"><svg viewBox="0 0 200 150" width="100%">
+<path d="M30 130 A80 80 0 1 1 170 130" fill="none" stroke="#2a2f38" stroke-width="14" stroke-linecap="round" pathLength="100"/>
+<path id="arc" d="M30 130 A80 80 0 1 1 170 130" fill="none" stroke="#3b9cff" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
+<text x="100" y="92" text-anchor="middle" id="big" font-size="50" font-weight="700" fill="#f2f4f7">0</text>
+<text x="100" y="115" text-anchor="middle" font-size="13" fill="#8b93a1">km/h</text></svg></div>
+<div class="v h" id="v2"><div id="map"></div></div>
+<div class="g">
+<div class="s"><small>Przejechane</small><b id="dist">0.00</b> <span>km</span></div>
+<div class="s"><small>Prędkość teraz</small><b id="cur">0</b> <span>km/h</span></div>
+<div class="s"><small>Średnia</small><b id="avg">0.0</b> <span>km/h</span></div>
+<div class="s"><small>Maksymalna</small><b id="max">0</b> <span>km/h</span></div>
+<div class="s" style="grid-column:span 2"><small>Czas jazdy</small><b id="time">00:00:00</b></div></div>
+<div class="r"><button id="go">Start</button><button class="rs" id="rs">Reset</button></div>
+<div id="msg">Naciśnij Start.</div>
+<script>
+var $=function(i){return document.getElementById(i)};
+var watch=null,dist=0,maxv=0,mov=0,last=null,cur=0,map,line,dot,lock=null;
+function show(n){$('v1').classList.toggle('h',n!=1);$('v2').classList.toggle('h',n!=2);
+ $('t1').classList.toggle('on',n==1);$('t2').classList.toggle('on',n==2);
+ if(n==2){initMap();setTimeout(function(){map.invalidateSize()},50)}}
+$('t1').onclick=function(){show(1)};$('t2').onclick=function(){show(2)};
+function initMap(){if(map)return;map=L.map('map').setView([52,19],6);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+ line=L.polyline([],{color:'#3b9cff',weight:5}).addTo(map);}
+function hav(a,b){var r=Math.PI/180,x=Math.sin((b[0]-a[0])*r/2),y=Math.sin((b[1]-a[1])*r/2);
+ return 12742000*Math.asin(Math.sqrt(x*x+Math.cos(a[0]*r)*Math.cos(b[0]*r)*y*y))}
+function f(s){s=Math.floor(s);return [Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(function(v){return v<10?'0'+v:v}).join(':')}
+function upd(){var v=Math.round(cur);$('big').textContent=v;$('cur').textContent=v;
+ $('arc').setAttribute('stroke-dasharray',Math.min(cur/200,1)*100+' 100');
+ $('dist').textContent=(dist/1000).toFixed(2);$('max').textContent=Math.round(maxv);
+ $('time').textContent=f(mov);$('avg').textContent=mov>0?(dist/mov*3.6).toFixed(1):'0.0'}
+function onPos(p){var c=p.coords,t=p.timestamp;
+ if(c.accuracy>40){$('msg').textContent='Słaby GPS (±'+Math.round(c.accuracy)+' m)…';return}
+ $('msg').textContent='GPS OK (±'+Math.round(c.accuracy)+' m)';
+ var pt=[c.latitude,c.longitude],v=c.speed!=null?c.speed*3.6:null;
+ if(last){var d=hav(last.p,pt),dt=(t-last.t)/1000;
+  if(dt>0){if(v==null)v=d/dt*3.6;
+   if(v>=2&&d>=2){dist+=d;mov+=dt;last={p:pt,t:t};addPt(pt)}else{if(v<2)v=0;last.t=t}}}
+ else{last={p:pt,t:t};addPt(pt);if(v==null)v=0}
+ cur=v<2?0:v;if(cur>maxv)maxv=cur;upd()}
+function addPt(pt){if(!map)return;line.addLatLng(pt);
+ if(!dot)dot=L.circleMarker(pt,{radius:8,color:'#fff',fillColor:'#ef4444',fillOpacity:1}).addTo(map);
+ dot.setLatLng(pt);map.setView(pt,Math.max(map.getZoom(),16))}
+$('go').onclick=async function(){
+ if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null;cur=0;last=null;upd();
+  $('go').textContent='Start';$('go').classList.remove('st');$('msg').textContent='Zatrzymano.';
+  if(lock){lock.release();lock=null}return}
+ watch=navigator.geolocation.watchPosition(onPos,function(e){$('msg').textContent=e.code==1?'Brak zgody na lokalizację.':'Błąd GPS: '+e.message},{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+ try{lock=await navigator.wakeLock.request('screen')}catch(e){}
+ $('go').textContent='Stop';$('go').classList.add('st');$('msg').textContent='Szukam sygnału GPS…'};
+$('rs').onclick=function(){dist=0;maxv=0;mov=0;last=null;cur=0;if(line)line.setLatLngs([]);if(dot){dot.remove();dot=null}upd()};
+</script></body></html>

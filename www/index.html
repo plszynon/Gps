@@ -12,7 +12,7 @@ body{display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px 10
 .p{position:absolute;inset:0}
 .h{display:none}
 #gv{display:flex;flex-direction:column;align-items:center;justify-content:center}
-svg{width:100%;max-width:380px}
+#sv{width:100%;max-width:380px}
 #nd{transform-origin:150px 150px;transition:transform .35s;filter:drop-shadow(0 0 5px #f00)}
 #big{font:700 84px "Courier New",monospace;color:#ff9800;line-height:1;margin-top:-6px}
 #big small{font-size:20px;color:#aaa}
@@ -41,7 +41,7 @@ svg{width:100%;max-width:380px}
 <div class="b"><button id="go">Start</button><button class="rs" id="rs">Reset</button></div>
 <script>
 var $=function(i){return document.getElementById(i)};
-var rec=false,dist=0,maxv=0,mov=0,last=null,cur=0,pos=null,map,me,acc,line,follow=true,lock=null,view=1;
+var el=0,rec=false,dist=0,maxv=0,mov=0,last=null,cur=0,pos=null,map,me,acc,line,follow=true,lock=null,view=1;
 function P(t,r){var a=t*Math.PI/180;return[150-r*Math.sin(a),150+r*Math.cos(a)]}
 (function(){var s='';for(var v=0;v<=240;v+=10){var t=v*270/240,M=v%20==0,a=P(t,M?106:112),b=P(t,125);
  s+='<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="#ccc" stroke-width="'+(M?4:2)+'"/>';
@@ -56,32 +56,33 @@ function upd(){var v=Math.round(cur);
  $('big').innerHTML=v+'<small> km/h</small>';$('ms').textContent=v+' km/h';
  $('nd').style.transform='rotate('+Math.min(cur,240)*270/240+'deg)';
  $('dist').textContent=(dist/1000).toFixed(2);$('max').textContent=Math.round(maxv);
- $('time').textContent=f(mov);$('avg').textContent=mov>0?Math.round(dist/mov*3.6):0}
+ $('time').textContent=f(el);$('avg').textContent=mov>0?Math.round(dist/mov*3.6):0}
 function initMap(){if(map)return;map=L.map('map',{zoomControl:false}).setView(pos||[52,19],pos?17:6);
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
  line=L.polyline([],{color:'#ff9800',weight:5}).addTo(map);
  acc=L.circle(pos||[0,0],{radius:20,color:'#3b9cff',weight:1,fillOpacity:.12}).addTo(map);
- me=L.circleMarker(pos||[0,0],{radius:9,color:'#fff',weight:3,fillColor:'#3b9cff',fillOpacity:1}).addTo(map);
+ me=L.marker(pos||[0,0],{icon:L.divIcon({className:'',html:'<div style="width:22px;height:22px;border-radius:50%;background:#3b9cff;border:3px solid #fff;box-shadow:0 0 0 7px #3b9cff55"></div>',iconSize:[22,22],iconAnchor:[11,11]})}).addTo(map);
  map.on('dragstart',function(){follow=false})}
-function center(){if(!pos||!map)return;follow=true;map.setView(pos,Math.max(map.getZoom(),17))}
+function center(){if(!pos||!map)return;follow=true;map.setView(pos,Math.max(map.getZoom(),17),{animate:false})}
 $('fab').onclick=center;
 $('tm').onclick=function(){view=view==1?2:1;$('gv').classList.toggle('h',view!=1);$('mw').classList.toggle('h',view!=2);
  $('tm').textContent=view==1?'🗺 Mapa':'⏱ Zegar';
  if(view==2){initMap();setTimeout(function(){map.invalidateSize();if(pos){me.setLatLng(pos);acc.setLatLng(pos);follow=true;center()}},60)}};
 function onPos(p){var c=p.coords,t=p.timestamp,pt=[c.latitude,c.longitude],q=Math.max(0,Math.min(100,Math.round(100-(c.accuracy-5)*100/45)));
- pos=pt;$('msg').textContent='GPS: ±'+Math.round(c.accuracy)+' m • jakość sygnału '+q+'%';
- if(map){me.setLatLng(pt);acc.setLatLng(pt).setRadius(c.accuracy);if(follow&&view==2)map.setView(pt,Math.max(map.getZoom(),17))}
+ pos=pt;$('msg').textContent='GPS: ±'+Math.round(c.accuracy)+' m • jakość sygnału '+q+'%'+(c.accuracy>50?' – wyjdź na zewnątrz':'');
+ if(map){me.setLatLng(pt);acc.setLatLng(pt).setRadius(c.accuracy);if(follow&&view==2)map.setView(pt,Math.max(map.getZoom(),17),{animate:false})}
  var v=c.speed!=null?c.speed*3.6:null;
- if(last&&c.accuracy<=40){var d=hav(last.p,pt),dt=(t-last.t)/1000;
-  if(dt>0){if(v==null)v=d/dt*3.6;
-   if(v>=2&&d>=2){if(rec){dist+=d;mov+=dt;if(line)line.addLatLng(pt)}last={p:pt,t:t}}else{last.t=t}}}
- else if(!last&&c.accuracy<=40){last={p:pt,t:t}}
- if(v==null)v=0;cur=v<2?0:v;if(rec&&cur>maxv)maxv=cur;upd()}
+ if(last){var d=hav(last.p,pt),dt=(t-last.t)/1000;
+  if(dt>0){if(v==null)v=d>c.accuracy*0.5?d/dt*3.6:0;
+   if(v>=3&&c.accuracy<=100&&rec&&d>=2){dist+=d;mov+=dt;if(line)line.addLatLng(pt)}}}
+ last={p:pt,t:t};
+ if(v==null)v=0;cur=v<3?0:v;if(rec&&cur>maxv)maxv=cur;upd()}
 function err(e){$('msg').textContent=e.code==1?'Brak zgody na lokalizację – włącz ją w ustawieniach.':'Błąd GPS: '+e.message}
 navigator.geolocation.watchPosition(onPos,err,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
 $('go').onclick=async function(){rec=!rec;
  if(rec){try{lock=await navigator.wakeLock.request('screen')}catch(e){}}else if(lock){lock.release();lock=null}
  $('go').textContent=rec?'Stop':'Start';$('go').classList.toggle('st',rec)};
-$('rs').onclick=function(){dist=0;maxv=0;mov=0;if(line)line.setLatLngs([]);upd()};
+setInterval(function(){if(rec){el++;upd()}},1000);
+$('rs').onclick=function(){el=0;dist=0;maxv=0;mov=0;if(line)line.setLatLngs([]);upd()};
 upd();
 </script></body></html>

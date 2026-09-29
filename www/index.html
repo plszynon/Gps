@@ -3,71 +3,85 @@
 <link rel="stylesheet" href="lib/leaflet.css"><script src="lib/leaflet.js"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0d0f13;color:#f2f4f7;font-family:system-ui,sans-serif;padding:env(safe-area-inset-top) 12px 12px}
-.tabs{display:flex;background:#181b21;border-radius:12px;padding:4px;gap:4px;margin-top:12px}
-.tabs button{flex:1;border:0;background:none;color:#8b93a1;padding:12px;border-radius:9px;font-size:16px;font-weight:600}
-.tabs .on{background:#3b9cff;color:#fff}
-.v{margin-top:12px;background:#181b21;border-radius:16px;padding:12px}
-#map{height:300px;border-radius:12px}
-.g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-.s{background:#181b21;border-radius:12px;padding:12px}
-.s small{color:#8b93a1;display:block;font-size:12px}.s b{font-size:24px}.s span{font-size:13px;color:#8b93a1}
-.r{display:flex;gap:8px;margin-top:12px}
-.r button{flex:1;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:700;color:#fff;background:#22c55e}
-.r .rs{background:#2a2f38;flex:.5}.r .st{background:#ef4444}
-#msg{margin-top:10px;font-size:13px;color:#8b93a1;text-align:center}
+html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,sans-serif}
+body{display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px 10px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:8px 2px}
+#clk{font:700 30px "Courier New",monospace;color:#ff9800}
+.top button{background:#1a1a1a;color:#ff9800;border:1px solid #ff9800;border-radius:10px;padding:9px 14px;font-size:15px;font-weight:700;margin-left:6px}
+#main{flex:1;position:relative;min-height:0}
+.p{position:absolute;inset:0}
 .h{display:none}
+#gv{display:flex;flex-direction:column;align-items:center;justify-content:center}
+svg{width:100%;max-width:380px}
+#nd{transform-origin:150px 150px;transition:transform .35s;filter:drop-shadow(0 0 5px #f00)}
+#big{font:700 84px "Courier New",monospace;color:#ff9800;line-height:1;margin-top:-6px}
+#big small{font-size:20px;color:#aaa}
+#map{position:absolute;inset:0;border-radius:14px}
+#fab{position:absolute;right:12px;bottom:14px;z-index:1000;width:54px;height:54px;border-radius:50%;border:2px solid #ff9800;background:#000;color:#ff9800;font-size:26px}
+#ms{position:absolute;left:12px;top:12px;z-index:1000;background:#000c;border:1px solid #ff9800;border-radius:10px;padding:6px 12px;font:700 24px "Courier New",monospace;color:#ff9800}
+.info{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;text-align:center}
+.info div{background:#111;border-radius:10px;padding:8px 2px}
+.info small{display:block;font-size:11px;color:#999}
+.info b{font:700 20px "Courier New",monospace;color:#ff9800}
+#msg{text-align:center;font-size:13px;color:#ff9800;margin:8px 0}
+.b{display:flex;gap:8px}
+.b button{flex:1;padding:15px;border:0;border-radius:12px;font-size:18px;font-weight:700;color:#fff;background:#22c55e}
+.b .rs{background:#2a2a2a;flex:.5}.b .st{background:#ef4444}
 </style></head><body>
-<div class="tabs"><button id="t1" class="on">Prędkościomierz</button><button id="t2">Mapa</button></div>
-<div class="v" id="v1"><svg viewBox="0 0 200 150" width="100%">
-<path d="M30 130 A80 80 0 1 1 170 130" fill="none" stroke="#2a2f38" stroke-width="14" stroke-linecap="round" pathLength="100"/>
-<path id="arc" d="M30 130 A80 80 0 1 1 170 130" fill="none" stroke="#3b9cff" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
-<text x="100" y="92" text-anchor="middle" id="big" font-size="50" font-weight="700" fill="#f2f4f7">0</text>
-<text x="100" y="115" text-anchor="middle" font-size="13" fill="#8b93a1">km/h</text></svg></div>
-<div class="v h" id="v2"><div id="map"></div></div>
-<div class="g">
-<div class="s"><small>Przejechane</small><b id="dist">0.00</b> <span>km</span></div>
-<div class="s"><small>Prędkość teraz</small><b id="cur">0</b> <span>km/h</span></div>
-<div class="s"><small>Średnia</small><b id="avg">0.0</b> <span>km/h</span></div>
-<div class="s"><small>Maksymalna</small><b id="max">0</b> <span>km/h</span></div>
-<div class="s" style="grid-column:span 2"><small>Czas jazdy</small><b id="time">00:00:00</b></div></div>
-<div class="r"><button id="go">Start</button><button class="rs" id="rs">Reset</button></div>
-<div id="msg">Naciśnij Start.</div>
+<div class="top"><span id="clk">00:00</span><span><button id="tm">🗺 Mapa</button></span></div>
+<div id="main">
+<div class="p" id="gv"><svg viewBox="0 0 300 300" id="sv"><path d="M150 275 A125 125 0 1 1 275 150" fill="none" stroke="#ccc" stroke-width="7"/><g id="tk"></g>
+<g id="nd"><line x1="150" y1="150" x2="150" y2="262" stroke="#f33" stroke-width="7" stroke-linecap="round"/><line x1="150" y1="150" x2="150" y2="262" stroke="#fff" stroke-width="2"/></g>
+<circle cx="150" cy="150" r="9" fill="#222" stroke="#888"/><text x="215" y="235" fill="#ddd" font-size="20" transform="rotate(-40 215 235)">km/h</text></svg>
+<div id="big">0<small> km/h</small></div></div>
+<div class="p h" id="mw"><div id="map"></div><div id="ms">0 km/h</div><button id="fab">📍</button></div>
+</div>
+<div class="info"><div><small>TRIP km</small><b id="dist">0.00</b></div><div><small>ŚR. km/h</small><b id="avg">0</b></div><div><small>MAX km/h</small><b id="max">0</b></div><div><small>CZAS</small><b id="time">0:00:00</b></div></div>
+<div id="msg">Nawiązywanie połączenia GPS…</div>
+<div class="b"><button id="go">Start</button><button class="rs" id="rs">Reset</button></div>
 <script>
 var $=function(i){return document.getElementById(i)};
-var watch=null,dist=0,maxv=0,mov=0,last=null,cur=0,map,line,dot,lock=null;
-function show(n){$('v1').classList.toggle('h',n!=1);$('v2').classList.toggle('h',n!=2);
- $('t1').classList.toggle('on',n==1);$('t2').classList.toggle('on',n==2);
- if(n==2){initMap();setTimeout(function(){map.invalidateSize()},50)}}
-$('t1').onclick=function(){show(1)};$('t2').onclick=function(){show(2)};
-function initMap(){if(map)return;map=L.map('map').setView([52,19],6);
- L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
- line=L.polyline([],{color:'#3b9cff',weight:5}).addTo(map);}
+var rec=false,dist=0,maxv=0,mov=0,last=null,cur=0,pos=null,map,me,acc,line,follow=true,lock=null,view=1;
+function P(t,r){var a=t*Math.PI/180;return[150-r*Math.sin(a),150+r*Math.cos(a)]}
+(function(){var s='';for(var v=0;v<=240;v+=10){var t=v*270/240,M=v%20==0,a=P(t,M?106:112),b=P(t,125);
+ s+='<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="#ccc" stroke-width="'+(M?4:2)+'"/>';
+ if(M){var l=P(t,88);s+='<text x="'+l[0]+'" y="'+(l[1]+6)+'" fill="#ddd" font-size="17" text-anchor="middle">'+v+'</text>'}}
+ $('tk').innerHTML=s})();
+function clock(){var d=new Date();$('clk').textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+clock();setInterval(clock,10000);
+function f(s){s=Math.floor(s);return Math.floor(s/3600)+':'+('0'+Math.floor(s%3600/60)).slice(-2)+':'+('0'+s%60).slice(-2)}
 function hav(a,b){var r=Math.PI/180,x=Math.sin((b[0]-a[0])*r/2),y=Math.sin((b[1]-a[1])*r/2);
  return 12742000*Math.asin(Math.sqrt(x*x+Math.cos(a[0]*r)*Math.cos(b[0]*r)*y*y))}
-function f(s){s=Math.floor(s);return [Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(function(v){return v<10?'0'+v:v}).join(':')}
-function upd(){var v=Math.round(cur);$('big').textContent=v;$('cur').textContent=v;
- $('arc').setAttribute('stroke-dasharray',Math.min(cur/200,1)*100+' 100');
+function upd(){var v=Math.round(cur);
+ $('big').innerHTML=v+'<small> km/h</small>';$('ms').textContent=v+' km/h';
+ $('nd').style.transform='rotate('+Math.min(cur,240)*270/240+'deg)';
  $('dist').textContent=(dist/1000).toFixed(2);$('max').textContent=Math.round(maxv);
- $('time').textContent=f(mov);$('avg').textContent=mov>0?(dist/mov*3.6).toFixed(1):'0.0'}
-function onPos(p){var c=p.coords,t=p.timestamp;
- if(c.accuracy>40){$('msg').textContent='Słaby GPS (±'+Math.round(c.accuracy)+' m)…';return}
- $('msg').textContent='GPS OK (±'+Math.round(c.accuracy)+' m)';
- var pt=[c.latitude,c.longitude],v=c.speed!=null?c.speed*3.6:null;
- if(last){var d=hav(last.p,pt),dt=(t-last.t)/1000;
+ $('time').textContent=f(mov);$('avg').textContent=mov>0?Math.round(dist/mov*3.6):0}
+function initMap(){if(map)return;map=L.map('map',{zoomControl:false}).setView(pos||[52,19],pos?17:6);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+ line=L.polyline([],{color:'#ff9800',weight:5}).addTo(map);
+ acc=L.circle(pos||[0,0],{radius:20,color:'#3b9cff',weight:1,fillOpacity:.12}).addTo(map);
+ me=L.circleMarker(pos||[0,0],{radius:9,color:'#fff',weight:3,fillColor:'#3b9cff',fillOpacity:1}).addTo(map);
+ map.on('dragstart',function(){follow=false})}
+function center(){if(!pos||!map)return;follow=true;map.setView(pos,Math.max(map.getZoom(),17))}
+$('fab').onclick=center;
+$('tm').onclick=function(){view=view==1?2:1;$('gv').classList.toggle('h',view!=1);$('mw').classList.toggle('h',view!=2);
+ $('tm').textContent=view==1?'🗺 Mapa':'⏱ Zegar';
+ if(view==2){initMap();setTimeout(function(){map.invalidateSize();if(pos){me.setLatLng(pos);acc.setLatLng(pos);follow=true;center()}},60)}};
+function onPos(p){var c=p.coords,t=p.timestamp,pt=[c.latitude,c.longitude],q=Math.max(0,Math.min(100,Math.round(100-(c.accuracy-5)*100/45)));
+ pos=pt;$('msg').textContent='GPS: ±'+Math.round(c.accuracy)+' m • jakość sygnału '+q+'%';
+ if(map){me.setLatLng(pt);acc.setLatLng(pt).setRadius(c.accuracy);if(follow&&view==2)map.setView(pt,Math.max(map.getZoom(),17))}
+ var v=c.speed!=null?c.speed*3.6:null;
+ if(last&&c.accuracy<=40){var d=hav(last.p,pt),dt=(t-last.t)/1000;
   if(dt>0){if(v==null)v=d/dt*3.6;
-   if(v>=2&&d>=2){dist+=d;mov+=dt;last={p:pt,t:t};addPt(pt)}else{if(v<2)v=0;last.t=t}}}
- else{last={p:pt,t:t};addPt(pt);if(v==null)v=0}
- cur=v<2?0:v;if(cur>maxv)maxv=cur;upd()}
-function addPt(pt){if(!map)return;line.addLatLng(pt);
- if(!dot)dot=L.circleMarker(pt,{radius:8,color:'#fff',fillColor:'#ef4444',fillOpacity:1}).addTo(map);
- dot.setLatLng(pt);map.setView(pt,Math.max(map.getZoom(),16))}
-$('go').onclick=async function(){
- if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null;cur=0;last=null;upd();
-  $('go').textContent='Start';$('go').classList.remove('st');$('msg').textContent='Zatrzymano.';
-  if(lock){lock.release();lock=null}return}
- watch=navigator.geolocation.watchPosition(onPos,function(e){$('msg').textContent=e.code==1?'Brak zgody na lokalizację.':'Błąd GPS: '+e.message},{enableHighAccuracy:true,maximumAge:0,timeout:20000});
- try{lock=await navigator.wakeLock.request('screen')}catch(e){}
- $('go').textContent='Stop';$('go').classList.add('st');$('msg').textContent='Szukam sygnału GPS…'};
-$('rs').onclick=function(){dist=0;maxv=0;mov=0;last=null;cur=0;if(line)line.setLatLngs([]);if(dot){dot.remove();dot=null}upd()};
+   if(v>=2&&d>=2){if(rec){dist+=d;mov+=dt;if(line)line.addLatLng(pt)}last={p:pt,t:t}}else{last.t=t}}}
+ else if(!last&&c.accuracy<=40){last={p:pt,t:t}}
+ if(v==null)v=0;cur=v<2?0:v;if(rec&&cur>maxv)maxv=cur;upd()}
+function err(e){$('msg').textContent=e.code==1?'Brak zgody na lokalizację – włącz ją w ustawieniach.':'Błąd GPS: '+e.message}
+navigator.geolocation.watchPosition(onPos,err,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+$('go').onclick=async function(){rec=!rec;
+ if(rec){try{lock=await navigator.wakeLock.request('screen')}catch(e){}}else if(lock){lock.release();lock=null}
+ $('go').textContent=rec?'Stop':'Start';$('go').classList.toggle('st',rec)};
+$('rs').onclick=function(){dist=0;maxv=0;mov=0;if(line)line.setLatLngs([]);upd()};
+upd();
 </script></body></html>

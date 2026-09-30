@@ -2,64 +2,110 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="lib/leaflet.css"><script src="lib/leaflet.js"></script>
 <style>
+:root{--a:#ff9800}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,sans-serif}
 body{display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px 10px}
+body.over{box-shadow:inset 0 0 0 6px #f00;animation:bl .6s infinite alternate}
+@keyframes bl{to{background:#400}}
 .top{display:flex;justify-content:space-between;align-items:center;padding:8px 2px}
-#clk{font:700 30px "Courier New",monospace;color:#ff9800}
-.top button{background:#1a1a1a;color:#ff9800;border:1px solid #ff9800;border-radius:10px;padding:9px 14px;font-size:15px;font-weight:700;margin-left:6px}
+#clk{font:700 30px "Courier New",monospace;color:var(--a)}
+.top button{background:#1a1a1a;color:var(--a);border:1px solid var(--a);border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;margin-left:5px}
 #main{flex:1;position:relative;min-height:0}
-.p{position:absolute;inset:0}
-.h{display:none}
+.p{position:absolute;inset:0}.h{display:none}
 #gv{display:flex;flex-direction:column;align-items:center;justify-content:center}
 #sv{width:100%;max-width:380px}
 #nd{transform-origin:150px 150px;transition:transform .35s;filter:drop-shadow(0 0 5px #f00)}
-#big{font:700 84px "Courier New",monospace;color:#ff9800;line-height:1;margin-top:-6px}
+#big{font:700 84px "Courier New",monospace;color:var(--a);line-height:1;margin-top:-6px}
 #big small{font-size:20px;color:#aaa}
+body.over #big{color:#f33}
 #map{position:absolute;inset:0;border-radius:14px}
-#fab{position:absolute;right:12px;bottom:14px;z-index:1000;width:54px;height:54px;border-radius:50%;border:2px solid #ff9800;background:#000;color:#ff9800;font-size:26px}
-#ms{position:absolute;left:12px;top:12px;z-index:1000;background:#000c;border:1px solid #ff9800;border-radius:10px;padding:6px 12px;font:700 24px "Courier New",monospace;color:#ff9800}
+#fab{position:absolute;right:12px;bottom:14px;z-index:1000;width:54px;height:54px;border-radius:50%;border:2px solid var(--a);background:#000;color:var(--a);font-size:26px}
+#ms{position:absolute;left:12px;top:12px;z-index:1000;background:#000c;border:1px solid var(--a);border-radius:10px;padding:6px 12px;font:700 24px "Courier New",monospace;color:var(--a)}
 .info{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;text-align:center}
 .info div{background:#111;border-radius:10px;padding:8px 2px}
 .info small{display:block;font-size:11px;color:#999}
-.info b{font:700 20px "Courier New",monospace;color:#ff9800}
-#msg{text-align:center;font-size:13px;color:#ff9800;margin:8px 0}
+.info b{font:700 20px "Courier New",monospace;color:var(--a)}
+#msg{text-align:center;font-size:13px;color:var(--a);margin:8px 0}
 .b{display:flex;gap:8px}
 .b button{flex:1;padding:15px;border:0;border-radius:12px;font-size:18px;font-weight:700;color:#fff;background:#22c55e}
 .b .rs{background:#2a2a2a;flex:.5}.b .st{background:#ef4444}
+.ov{position:fixed;inset:0;background:#000;z-index:3000;padding:calc(env(safe-area-inset-top) + 12px) 14px 14px;overflow:auto}
+.ov h2{margin:0 0 14px;color:var(--a);display:flex;justify-content:space-between;align-items:center}
+.ov h2 button,.it button{background:#222;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:16px}
+.it{background:#111;border-radius:10px;padding:12px;margin-bottom:8px;position:relative;font-size:14px;line-height:1.5}
+.it button{position:absolute;right:8px;top:8px}
+.row{background:#111;border-radius:10px;padding:12px;margin-bottom:10px}
+.row label{display:block;color:#999;font-size:13px;margin-bottom:8px}
+.row button{background:#222;color:#fff;border:2px solid #222;border-radius:8px;padding:10px 16px;margin-right:6px;font-size:16px}
+.row button.sel{border-color:var(--a)}
+.row .c{width:42px;height:42px;padding:0;border-radius:50%}
+.row input{background:#222;color:#fff;border:1px solid #444;border-radius:8px;padding:10px;font-size:18px;width:110px}
 </style></head><body>
-<div class="top"><span id="clk">00:00</span><span><button id="tm">🗺 Mapa</button></span></div>
+<div class="top"><span id="clk">00:00</span><span><button id="bh">📜</button><button id="bs">⚙</button><button id="tm">🗺 Mapa</button></span></div>
 <div id="main">
 <div class="p" id="gv"><svg viewBox="0 0 300 300" id="sv"><path d="M150 275 A125 125 0 1 1 275 150" fill="none" stroke="#ccc" stroke-width="7"/><g id="tk"></g>
 <g id="nd"><line x1="150" y1="150" x2="150" y2="262" stroke="#f33" stroke-width="7" stroke-linecap="round"/><line x1="150" y1="150" x2="150" y2="262" stroke="#fff" stroke-width="2"/></g>
-<circle cx="150" cy="150" r="9" fill="#222" stroke="#888"/><text x="215" y="235" fill="#ddd" font-size="20" transform="rotate(-40 215 235)">km/h</text></svg>
-<div id="big">0<small> km/h</small></div></div>
-<div class="p h" id="mw"><div id="map"></div><div id="ms">0 km/h</div><button id="fab">📍</button></div>
+<circle cx="150" cy="150" r="9" fill="#222" stroke="#888"/><text id="ul" x="215" y="235" fill="#ddd" font-size="20" transform="rotate(-40 215 235)">km/h</text></svg>
+<div id="big">0</div></div>
+<div class="p h" id="mw"><div id="map"></div><div id="ms">0</div><button id="fab">📍</button></div>
 </div>
-<div class="info"><div><small>TRIP km</small><b id="dist">0.00</b></div><div><small>ŚR. km/h</small><b id="avg">0</b></div><div><small>MAX km/h</small><b id="max">0</b></div><div><small>CZAS</small><b id="time">0:00:00</b></div></div>
+<div class="info"><div><small id="l1">TRIP km</small><b id="dist">0.00</b></div><div><small id="l2">ŚR.</small><b id="avg">0</b></div><div><small id="l3">MAX</small><b id="max">0</b></div><div><small>CZAS</small><b id="time">0:00:00</b></div></div>
 <div id="msg">Nawiązywanie połączenia GPS…</div>
 <div class="b"><button id="go">Start</button><button class="rs" id="rs">Reset</button></div>
+
+<div class="ov h" id="hv"><h2>Historia tras <button id="hx">✕</button></h2><div id="hl"></div><div class="row"><button id="hc">Wyczyść wszystko</button></div></div>
+<div class="ov h" id="sw"><h2>Ustawienia <button id="sx">✕</button></h2>
+<div class="row"><label>Jednostki</label><button data-u="kmh">km/h</button><button data-u="mph">mph</button></div>
+<div class="row"><label>Kolor</label><button class="c" data-c="#ff9800" style="background:#ff9800"></button><button class="c" data-c="#3b9cff" style="background:#3b9cff"></button><button class="c" data-c="#22c55e" style="background:#22c55e"></button><button class="c" data-c="#ef4444" style="background:#ef4444"></button><button class="c" data-c="#e040fb" style="background:#e040fb"></button></div>
+<div class="row"><label>Ostrzeżenie o prędkości (0 = wyłączone)</label><input id="lim" type="number" min="0" max="400"> <span id="lu"></span></div></div>
+
 <script>
 var $=function(i){return document.getElementById(i)};
-var el=0,rec=false,dist=0,maxv=0,mov=0,last=null,cur=0,pos=null,map,me,acc,line,follow=true,lock=null,view=1;
+var S={u:'kmh',c:'#ff9800',lim:0};try{Object.assign(S,JSON.parse(localStorage.getItem('gs')||'{}'))}catch(e){}
+var H=[];try{H=JSON.parse(localStorage.getItem('gh')||'[]')}catch(e){}
+function sv(){try{localStorage.setItem('gs',JSON.stringify(S));localStorage.setItem('gh',JSON.stringify(H))}catch(e){}}
+var el=0,rec=false,dist=0,maxv=0,mov=0,last=null,cur=0,pos=null,map,me,acc,line,follow=true,view=1,lastB=0,ac;
+function U(){return S.u=='mph'?0.621371:1}
+function UL(){return S.u=='mph'?'mph':'km/h'}
+function SM(){return S.u=='mph'?160:240}
 function P(t,r){var a=t*Math.PI/180;return[150-r*Math.sin(a),150+r*Math.cos(a)]}
-(function(){var s='';for(var v=0;v<=240;v+=10){var t=v*270/240,M=v%20==0,a=P(t,M?106:112),b=P(t,125);
+function ticks(){var s='',m=SM();for(var v=0;v<=m;v+=10){var t=v*270/m,M=v%20==0,a=P(t,M?106:112),b=P(t,125);
  s+='<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="#ccc" stroke-width="'+(M?4:2)+'"/>';
  if(M){var l=P(t,88);s+='<text x="'+l[0]+'" y="'+(l[1]+6)+'" fill="#ddd" font-size="17" text-anchor="middle">'+v+'</text>'}}
- $('tk').innerHTML=s})();
+ $('tk').innerHTML=s}
 function clock(){var d=new Date();$('clk').textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
 clock();setInterval(clock,10000);
 function f(s){s=Math.floor(s);return Math.floor(s/3600)+':'+('0'+Math.floor(s%3600/60)).slice(-2)+':'+('0'+s%60).slice(-2)}
 function hav(a,b){var r=Math.PI/180,x=Math.sin((b[0]-a[0])*r/2),y=Math.sin((b[1]-a[1])*r/2);
  return 12742000*Math.asin(Math.sqrt(x*x+Math.cos(a[0]*r)*Math.cos(b[0]*r)*y*y))}
-function upd(){var v=Math.round(cur);
- $('big').innerHTML=v+'<small> km/h</small>';$('ms').textContent=v+' km/h';
- $('nd').style.transform='rotate('+Math.min(cur,240)*270/240+'deg)';
- $('dist').textContent=(dist/1000).toFixed(2);$('max').textContent=Math.round(maxv);
- $('time').textContent=f(el);$('avg').textContent=mov>0?Math.round(dist/mov*3.6):0}
+function beep(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator();o.frequency.value=880;o.connect(ac.destination);o.start();o.stop(ac.currentTime+.25)}catch(e){}}
+function upd(){var d=cur*U(),v=Math.round(d);
+ $('big').innerHTML=v+'<small> '+UL()+'</small>';$('ms').textContent=v+' '+UL();
+ $('nd').style.transform='rotate('+Math.min(d,SM())*270/SM()+'deg)';
+ $('dist').textContent=(dist/1000*U()).toFixed(2);$('max').textContent=Math.round(maxv*U());
+ $('time').textContent=f(el);$('avg').textContent=mov>0?Math.round(dist/mov*3.6*U()):0;
+ var o=S.lim>0&&d>S.lim;document.body.classList.toggle('over',o);
+ if(o&&Date.now()-lastB>3000){lastB=Date.now();beep();try{navigator.vibrate(300)}catch(e){}}}
+function applyS(){document.documentElement.style.setProperty('--a',S.c);
+ document.querySelectorAll('[data-u]').forEach(function(b){b.classList.toggle('sel',b.dataset.u==S.u)});
+ document.querySelectorAll('[data-c]').forEach(function(b){b.classList.toggle('sel',b.dataset.c==S.c)});
+ $('lim').value=S.lim;$('lu').textContent=UL();$('ul').textContent=UL();
+ $('l1').textContent='TRIP '+(S.u=='mph'?'mi':'km');$('l2').textContent='ŚR. '+UL();$('l3').textContent='MAX '+UL();
+ if(line)line.setStyle({color:S.c});ticks();upd()}
+$('bs').onclick=function(){$('sw').classList.remove('h')};$('sx').onclick=function(){$('sw').classList.add('h')};
+document.querySelectorAll('[data-u]').forEach(function(b){b.onclick=function(){S.u=b.dataset.u;sv();applyS()}});
+document.querySelectorAll('[data-c]').forEach(function(b){b.onclick=function(){S.c=b.dataset.c;sv();applyS()}});
+$('lim').onchange=function(){S.lim=Math.max(0,+$('lim').value||0);sv();upd()};
+function rH(){var s='';for(var i=H.length-1;i>=0;i--){var h=H[i];
+ s+='<div class="it"><b>'+h.d+'</b><br>'+(h.km*U()).toFixed(2)+(S.u=='mph'?' mi':' km')+' • '+f(h.t)+'<br>śr. '+Math.round(h.a*U())+' • max '+Math.round(h.m*U())+' '+UL()+'<button data-i="'+i+'">🗑</button></div>'}
+ $('hl').innerHTML=s||'<p style="color:#999">Brak zapisanych tras.</p>'}
+$('bh').onclick=function(){rH();$('hv').classList.remove('h')};$('hx').onclick=function(){$('hv').classList.add('h')};
+$('hl').onclick=function(e){var i=e.target.dataset.i;if(i!=null){H.splice(+i,1);sv();rH()}};
+$('hc').onclick=function(){if(confirm('Usunąć całą historię?')){H=[];sv();rH()}};
 function initMap(){if(map)return;map=L.map('map',{zoomControl:false}).setView(pos||[52,19],pos?17:6);
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
- line=L.polyline([],{color:'#ff9800',weight:5}).addTo(map);
+ line=L.polyline([],{color:S.c,weight:5}).addTo(map);
  acc=L.circle(pos||[0,0],{radius:20,color:'#3b9cff',weight:1,fillOpacity:.12}).addTo(map);
  me=L.marker(pos||[0,0],{icon:L.divIcon({className:'',html:'<div style="width:22px;height:22px;border-radius:50%;background:#3b9cff;border:3px solid #fff;box-shadow:0 0 0 7px #3b9cff55"></div>',iconSize:[22,22],iconAnchor:[11,11]})}).addTo(map);
  map.on('dragstart',function(){follow=false})}
@@ -67,22 +113,26 @@ function center(){if(!pos||!map)return;follow=true;map.setView(pos,Math.max(map.
 $('fab').onclick=center;
 $('tm').onclick=function(){view=view==1?2:1;$('gv').classList.toggle('h',view!=1);$('mw').classList.toggle('h',view!=2);
  $('tm').textContent=view==1?'🗺 Mapa':'⏱ Zegar';
- if(view==2){initMap();setTimeout(function(){map.invalidateSize();if(pos){me.setLatLng(pos);acc.setLatLng(pos);follow=true;center()}},60)}};
-function onPos(p){var c=p.coords,t=p.timestamp,pt=[c.latitude,c.longitude],q=Math.max(0,Math.min(100,Math.round(100-(c.accuracy-5)*100/45)));
- pos=pt;$('msg').textContent='GPS: ±'+Math.round(c.accuracy)+' m • jakość sygnału '+q+'%'+(c.accuracy>50?' – wyjdź na zewnątrz':'');
- if(map){me.setLatLng(pt);acc.setLatLng(pt).setRadius(c.accuracy);if(follow&&view==2)map.setView(pt,Math.max(map.getZoom(),17),{animate:false})}
- var v=c.speed!=null?c.speed*3.6:null;
+ if(view==2){initMap();setTimeout(function(){map.invalidateSize();if(pos){me.setLatLng(pos);acc.setLatLng(pos);center()}},60)}};
+function onPos(la,lo,ca,sp,t){var pt=[la,lo],q=Math.max(0,Math.min(100,Math.round(100-(ca-5)*100/45)));
+ pos=pt;$('msg').textContent='GPS: ±'+Math.round(ca)+' m • jakość sygnału '+q+'%'+(ca>50?' – wyjdź na zewnątrz':'');
+ if(map){me.setLatLng(pt);acc.setLatLng(pt).setRadius(ca);if(follow&&view==2)map.setView(pt,Math.max(map.getZoom(),17),{animate:false})}
+ var v=(sp!=null&&sp>=0)?sp*3.6:null;
  if(last){var d=hav(last.p,pt),dt=(t-last.t)/1000;
-  if(dt>0){if(v==null)v=d>c.accuracy*0.5?d/dt*3.6:0;
-   if(v>=3&&c.accuracy<=100&&rec&&d>=2){dist+=d;mov+=dt;if(line)line.addLatLng(pt)}}}
+  if(dt>0){if(v==null)v=d>ca*0.5?d/dt*3.6:0;
+   if(v>=3&&ca<=100&&rec&&d>=2){dist+=d;mov+=dt;if(line)line.addLatLng(pt)}}}
  last={p:pt,t:t};
  if(v==null)v=0;cur=v<3?0:v;if(rec&&cur>maxv)maxv=cur;upd()}
-function err(e){$('msg').textContent=e.code==1?'Brak zgody na lokalizację – włącz ją w ustawieniach.':'Błąd GPS: '+e.message}
-navigator.geolocation.watchPosition(onPos,err,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
-$('go').onclick=async function(){rec=!rec;
- if(rec){try{lock=await navigator.wakeLock.request('screen')}catch(e){}}else if(lock){lock.release();lock=null}
- $('go').textContent=rec?'Stop':'Start';$('go').classList.toggle('st',rec)};
+function web(){if(!navigator.geolocation)return;navigator.geolocation.watchPosition(function(p){var c=p.coords;onPos(c.latitude,c.longitude,c.accuracy,c.speed,p.timestamp)},
+ function(e){$('msg').textContent=e.code==1?'Brak zgody na lokalizację – włącz ją w ustawieniach.':'Błąd GPS: '+e.message},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
+var BG=null;try{if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())BG=Capacitor.registerPlugin('BackgroundGeolocation')}catch(e){}
+if(BG){try{BG.addWatcher({backgroundMessage:'Prędkościomierz liczy trasę',backgroundTitle:'Prędkościomierz',requestPermissions:true,stale:false,distanceFilter:0},function(l,e){
+ if(e){$('msg').textContent='Brak zgody na lokalizację – włącz ją w ustawieniach.';if(e.code=='NOT_AUTHORIZED'&&confirm('Otworzyć ustawienia aplikacji?'))BG.openSettings();return}
+ onPos(l.latitude,l.longitude,l.accuracy,l.speed,l.time||Date.now())}).catch(web)}catch(e){web()}}else web();
+$('go').onclick=function(){rec=!rec;
+ if(!rec&&dist>=50){H.push({d:new Date().toLocaleString('pl-PL',{dateStyle:'short',timeStyle:'short'}),km:dist/1000,t:el,a:mov>0?dist/mov*3.6:0,m:maxv});sv();$('msg').textContent='Trasa zapisana w historii 📜'}
+ $('go').textContent=rec?'Stop':'Start';$('go').classList.toggle('st',rec);beep()};
 setInterval(function(){if(rec){el++;upd()}},1000);
 $('rs').onclick=function(){el=0;dist=0;maxv=0;mov=0;if(line)line.setLatLngs([]);upd()};
-upd();
+applyS();
 </script></body></html>

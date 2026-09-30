@@ -25,7 +25,23 @@ jobs:
       - name: Projekt Android
         run: |
           npx cap add android
-          sed -i 's#</manifest>#<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/></manifest>#' android/app/src/main/AndroidManifest.xml
+          M=android/app/src/main/AndroidManifest.xml
+          P=""
+          for x in ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION FOREGROUND_SERVICE FOREGROUND_SERVICE_LOCATION POST_NOTIFICATIONS WAKE_LOCK; do P="$P<uses-permission android:name=\"android.permission.$x\"/>"; done
+          sed -i "s#</manifest>#$P</manifest>#" $M
+          cat > android/app/src/main/java/com/example/predkosciomierz/MainActivity.java <<'JEOF'
+          package com.example.predkosciomierz;
+          import android.os.Bundle;
+          import android.view.WindowManager;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+            @Override
+            public void onCreate(Bundle b) {
+              super.onCreate(b);
+              getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
+          }
+          JEOF
           npx cap sync android
       - name: Budowanie APK
         run: |

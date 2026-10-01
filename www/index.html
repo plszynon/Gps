@@ -34,6 +34,7 @@ body.over #big{color:#f33}
 .ov h2{margin:0 0 14px;color:var(--a);display:flex;justify-content:space-between;align-items:center}
 .ov h2 button,.it button{background:#222;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-size:16px}
 .it{background:#111;border-radius:10px;padding:12px;margin-bottom:8px;position:relative;font-size:14px;line-height:1.5}
+.ver{color:#888;font-size:12px}.it{cursor:pointer}#rv{z-index:3500}#rmap{height:calc(100% - 56px);border-radius:12px}
 .it button{position:absolute;right:8px;top:8px}
 .row{background:#111;border-radius:10px;padding:12px;margin-bottom:10px}
 .row label{display:block;color:#999;font-size:13px;margin-bottom:8px}
@@ -42,7 +43,7 @@ body.over #big{color:#f33}
 .row .c{width:42px;height:42px;padding:0;border-radius:50%}
 .row input{background:#222;color:#fff;border:1px solid #444;border-radius:8px;padding:10px;font-size:18px;width:110px}
 </style></head><body>
-<div class="top"><span id="clk">00:00</span><span><button id="bh">📜</button><button id="bs">⚙</button><button id="tm">🗺 Mapa</button></span></div>
+<div class="top"><span><span id="clk">00:00</span> <small class="ver">v__VER__</small></span><span><button id="bh">📜</button><button id="bs">⚙</button><button id="tm">🗺 Mapa</button></span></div>
 <div id="main">
 <div class="p" id="gv"><svg viewBox="0 0 300 300" id="sv"><path d="M150 275 A125 125 0 1 1 275 150" fill="none" stroke="#ccc" stroke-width="7"/><g id="tk"></g>
 <g id="nd"><line x1="150" y1="150" x2="150" y2="262" stroke="#f33" stroke-width="7" stroke-linecap="round"/><line x1="150" y1="150" x2="150" y2="262" stroke="#fff" stroke-width="2"/></g>
@@ -55,17 +56,19 @@ body.over #big{color:#f33}
 <div class="b"><button id="go">Start</button><button class="rs" id="rs">Reset</button></div>
 
 <div class="ov h" id="hv"><h2>Historia tras <button id="hx">✕</button></h2><div id="hl"></div><div class="row"><button id="hc">Wyczyść wszystko</button></div></div>
+<div class="ov h" id="rv"><h2><span id="rtl"></span> <button id="rx">✕</button></h2><div id="rmap"></div></div>
 <div class="ov h" id="sw"><h2>Ustawienia <button id="sx">✕</button></h2>
 <div class="row"><label>Jednostki</label><button data-u="kmh">km/h</button><button data-u="mph">mph</button></div>
 <div class="row"><label>Kolor</label><button class="c" data-c="#ff9800" style="background:#ff9800"></button><button class="c" data-c="#3b9cff" style="background:#3b9cff"></button><button class="c" data-c="#22c55e" style="background:#22c55e"></button><button class="c" data-c="#ef4444" style="background:#ef4444"></button><button class="c" data-c="#e040fb" style="background:#e040fb"></button></div>
-<div class="row"><label>Ostrzeżenie o prędkości (0 = wyłączone)</label><input id="lim" type="number" min="0" max="400"> <span id="lu"></span></div></div>
+<div class="row"><label>Ostrzeżenie o prędkości (0 = wyłączone)</label><input id="lim" type="number" min="0" max="400"> <span id="lu"></span></div>
+<div class="row"><label>O aplikacji</label>Prędkościomierz v__VER__</div></div>
 
 <script>
 var $=function(i){return document.getElementById(i)};
 var S={u:'kmh',c:'#ff9800',lim:0};try{Object.assign(S,JSON.parse(localStorage.getItem('gs')||'{}'))}catch(e){}
 var H=[];try{H=JSON.parse(localStorage.getItem('gh')||'[]')}catch(e){}
 function sv(){try{localStorage.setItem('gs',JSON.stringify(S));localStorage.setItem('gh',JSON.stringify(H))}catch(e){}}
-var el=0,rec=false,dist=0,maxv=0,mov=0,last=null,cur=0,pos=null,map,me,acc,line,follow=true,view=1,lastB=0,ac;
+var el=0,rec=false,dist=0,maxv=0,mov=0,last=null,cur=0,pos=null,map,me,acc,line,follow=true,view=1,lastB=0,ac,rt=[],saved=false,rm,ro;
 function U(){return S.u=='mph'?0.621371:1}
 function UL(){return S.u=='mph'?'mph':'km/h'}
 function SM(){return S.u=='mph'?160:240}
@@ -98,10 +101,19 @@ document.querySelectorAll('[data-u]').forEach(function(b){b.onclick=function(){S
 document.querySelectorAll('[data-c]').forEach(function(b){b.onclick=function(){S.c=b.dataset.c;sv();applyS()}});
 $('lim').onchange=function(){S.lim=Math.max(0,+$('lim').value||0);sv();upd()};
 function rH(){var s='';for(var i=H.length-1;i>=0;i--){var h=H[i];
- s+='<div class="it"><b>'+h.d+'</b><br>'+(h.km*U()).toFixed(2)+(S.u=='mph'?' mi':' km')+' • '+f(h.t)+'<br>śr. '+Math.round(h.a*U())+' • max '+Math.round(h.m*U())+' '+UL()+'<button data-i="'+i+'">🗑</button></div>'}
+ s+='<div class="it" data-k="'+i+'"><b>'+h.d+'</b><br>'+(h.km*U()).toFixed(2)+(S.u=='mph'?' mi':' km')+' • '+f(h.t)+'<br>śr. '+Math.round(h.a*U())+' • max '+Math.round(h.m*U())+' '+UL()+'<br><span style="color:#888">▶ kliknij, aby zobaczyć trasę</span><button data-i="'+i+'">🗑</button></div>'}
  $('hl').innerHTML=s||'<p style="color:#999">Brak zapisanych tras.</p>'}
 $('bh').onclick=function(){rH();$('hv').classList.remove('h')};$('hx').onclick=function(){$('hv').classList.add('h')};
-$('hl').onclick=function(e){var i=e.target.dataset.i;if(i!=null){H.splice(+i,1);sv();rH()}};
+$('hl').onclick=function(e){var i=e.target.dataset.i;if(i!=null){H.splice(+i,1);sv();rH();return}var it=e.target.closest('.it');if(it)showRoute(+it.dataset.k)};
+function showRoute(i){var h=H[i];if(!h||!h.r||h.r.length<2){alert('Brak zapisanej trasy dla tego wpisu.');return}
+ $('rtl').textContent=h.d;$('rv').classList.remove('h');
+ setTimeout(function(){if(!rm){rm=L.map('rmap',{zoomControl:false});L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(rm)}
+  if(ro)ro.remove();ro=L.layerGroup().addTo(rm);
+  L.polyline(h.r,{color:S.c,weight:5}).addTo(ro);
+  L.circleMarker(h.r[0],{radius:9,color:'#fff',fillColor:'#22c55e',fillOpacity:1}).addTo(ro);
+  L.circleMarker(h.r[h.r.length-1],{radius:9,color:'#fff',fillColor:'#ef4444',fillOpacity:1}).addTo(ro);
+  rm.invalidateSize();rm.fitBounds(L.polyline(h.r).getBounds(),{padding:[30,30]})},80)}
+$('rx').onclick=function(){$('rv').classList.add('h')};
 $('hc').onclick=function(){if(confirm('Usunąć całą historię?')){H=[];sv();rH()}};
 function initMap(){if(map)return;map=L.map('map',{zoomControl:false}).setView(pos||[52,19],pos?17:6);
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
@@ -120,7 +132,7 @@ function onPos(la,lo,ca,sp,t){var pt=[la,lo],q=Math.max(0,Math.min(100,Math.roun
  var v=(sp!=null&&sp>=0)?sp*3.6:null;
  if(last){var d=hav(last.p,pt),dt=(t-last.t)/1000;
   if(dt>0){if(v==null)v=d>ca*0.5?d/dt*3.6:0;
-   if(v>=3&&ca<=100&&rec&&d>=2){dist+=d;mov+=dt;if(line)line.addLatLng(pt)}}}
+   if(v>=3&&ca<=100&&rec&&d>=2){dist+=d;mov+=dt;rt.push([+la.toFixed(5),+lo.toFixed(5)]);if(line)line.addLatLng(pt)}}}
  last={p:pt,t:t};
  if(v==null)v=0;cur=v<3?0:v;if(rec&&cur>maxv)maxv=cur;upd()}
 function web(){if(!navigator.geolocation)return;navigator.geolocation.watchPosition(function(p){var c=p.coords;onPos(c.latitude,c.longitude,c.accuracy,c.speed,p.timestamp)},
@@ -129,10 +141,13 @@ var BG=null;try{if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNat
 if(BG){try{BG.addWatcher({backgroundMessage:'Prędkościomierz liczy trasę',backgroundTitle:'Prędkościomierz',requestPermissions:true,stale:false,distanceFilter:0},function(l,e){
  if(e){$('msg').textContent='Brak zgody na lokalizację – włącz ją w ustawieniach.';if(e.code=='NOT_AUTHORIZED'&&confirm('Otworzyć ustawienia aplikacji?'))BG.openSettings();return}
  onPos(l.latitude,l.longitude,l.accuracy,l.speed,l.time||Date.now())}).catch(web)}catch(e){web()}}else web();
+function thin(a){var k=Math.ceil(a.length/1500),o=[];for(var i=0;i<a.length;i+=k)o.push(a[i]);if(k>1)o.push(a[a.length-1]);return o}
+function rst(){el=0;dist=0;maxv=0;mov=0;rt=[];saved=false;if(line)line.setLatLngs([]);upd()}
 $('go').onclick=function(){rec=!rec;
- if(!rec&&dist>=50){H.push({d:new Date().toLocaleString('pl-PL',{dateStyle:'short',timeStyle:'short'}),km:dist/1000,t:el,a:mov>0?dist/mov*3.6:0,m:maxv});sv();$('msg').textContent='Trasa zapisana w historii 📜'}
+ if(rec&&saved)rst();
+ if(!rec&&dist>=50){H.push({d:new Date().toLocaleString('pl-PL',{dateStyle:'short',timeStyle:'short'}),km:dist/1000,t:el,a:mov>0?dist/mov*3.6:0,m:maxv,r:thin(rt)});saved=true;sv();$('msg').textContent='Trasa zapisana w historii 📜'}
  $('go').textContent=rec?'Stop':'Start';$('go').classList.toggle('st',rec);beep()};
 setInterval(function(){if(rec){el++;upd()}},1000);
-$('rs').onclick=function(){el=0;dist=0;maxv=0;mov=0;if(line)line.setLatLngs([]);upd()};
+$('rs').onclick=rst;
 applyS();
 </script></body></html>

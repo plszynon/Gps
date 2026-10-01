@@ -22,6 +22,9 @@ jobs:
           npm install
           mkdir -p www/lib
           cp -r node_modules/leaflet/dist/* www/lib/
+          VER=$(node -p "require('./package.json').version")
+          echo "VER=$VER" >> $GITHUB_ENV
+          sed -i "s/__VER__/$VER/g" www/index.html
       - name: Projekt Android
         run: |
           npx cap add android
@@ -42,6 +45,17 @@ jobs:
             }
           }
           JEOF
+          G=android/app/build.gradle
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"$VER\"/" $G
+          sudo apt-get install -y imagemagick
+          convert -size 512x512 xc:'#0d0f13' -fill none -stroke '#ff9800' -strokewidth 36 -draw "arc 86,86 426,426 135,45" -stroke '#ff3333' -strokewidth 24 -draw "line 256,256 352,150" -fill '#dddddd' -stroke none -draw "circle 256,256 256,280" icon.png
+          R=android/app/src/main/res
+          rm -rf $R/mipmap-anydpi-v26
+          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            convert icon.png -resize ${d#*:}x${d#*:} $R/mipmap-${d%%:*}/ic_launcher.png
+            cp $R/mipmap-${d%%:*}/ic_launcher.png $R/mipmap-${d%%:*}/ic_launcher_round.png
+            cp $R/mipmap-${d%%:*}/ic_launcher.png $R/mipmap-${d%%:*}/ic_launcher_foreground.png
+          done
           npx cap sync android
       - name: Budowanie APK
         run: |
@@ -51,6 +65,6 @@ jobs:
       - name: Wydanie z APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-${{ github.run_number }}
-          name: Predkosciomierz ${{ github.run_number }}
+          tag_name: v${{ env.VER }}-build${{ github.run_number }}
+          name: Predkosciomierz v${{ env.VER }}
           files: android/app/build/outputs/apk/debug/app-debug.apk
